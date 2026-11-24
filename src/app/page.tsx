@@ -4,19 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Field, inputClass } from "@/components/field";
+import { DEFAULT_LANG, languages, type Lang } from "@/config/languages";
+import { sections } from "@/config/sections";
 import { useSession } from "@/context/session-context";
-import { questions } from "@/data/questions";
+import { getQuestions } from "@/data/questions";
 import { extractLocalDigits, formatLocal, isValidLocal, toE164, formatE164 } from "@/lib/phone";
-
-const steps = [
-  ["Регистрация", "Имя и номер телефона — больше ничего не нужно."],
-  ["Тест", `${questions.length} вопросов, в каждом один верный ответ из четырёх.`],
-  ["Результат", "Баллы и процент появятся сразу после завершения."],
-];
 
 export default function RegisterPage() {
   const router = useRouter();
   const { session, ready, start } = useSession();
+  const [lang, setLang] = useState<Lang>(DEFAULT_LANG);
   const [name, setName] = useState("");
   const [digits, setDigits] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -26,11 +23,25 @@ export default function RegisterPage() {
   const phoneError =
     submitted && !isValidLocal(digits) ? "Введите 9 цифр номера, например 555 123 456" : undefined;
 
+  const bank = getQuestions(lang);
+  const sectionTitles = sections
+    .filter((s) => bank.some((q) => q.section === s.id))
+    .map((s) => s.title.toLowerCase());
+
+  const steps = [
+    ["Регистрация", "Язык теста, имя и номер телефона — больше ничего не нужно."],
+    [
+      "Тест",
+      `Всего ${bank.length} вопросов, в каждом один верный ответ из четырёх. Разделы: ${sectionTitles.join(", ")}.`,
+    ],
+    ["Результат", "Общий процент и процент по каждому разделу появятся сразу после завершения."],
+  ];
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setSubmitted(true);
     if (trimmed.length < 2 || !isValidLocal(digits)) return;
-    start(trimmed, toE164(digits));
+    start(trimmed, toE164(digits), lang);
     router.push("/test");
   }
 
@@ -75,6 +86,36 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} noValidate className="space-y-2">
+          <fieldset className="pb-4">
+            <legend className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted">
+              Язык теста
+            </legend>
+            <div className="grid grid-cols-2 gap-2">
+              {languages.map((l) => {
+                const active = lang === l.id;
+                return (
+                  <button
+                    key={l.id}
+                    type="button"
+                    disabled={!l.available}
+                    aria-pressed={active}
+                    onClick={() => setLang(l.id)}
+                    className={`border px-4 py-3 text-left text-sm font-semibold transition ${
+                      active
+                        ? "border-ink bg-ink text-paper"
+                        : "border-line hover:border-ink disabled:hover:border-line"
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                  >
+                    {l.label}
+                    {!l.available && (
+                      <span className="ml-2 text-xs font-normal uppercase tracking-widest">скоро</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
           <Field id="name" label="Имя" error={nameError}>
             <input
               id="name"

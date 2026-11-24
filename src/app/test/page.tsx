@@ -1,15 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { RichText } from "@/components/rich-text";
+import { sections, sectionTitle } from "@/config/sections";
 import { useSession } from "@/context/session-context";
-import { questions } from "@/data/questions";
-
-const LETTERS = ["А", "Б", "В", "Г"];
+import { getQuestions } from "@/data/questions";
+import { LETTERS } from "@/lib/letters";
 
 export default function TestPage() {
   const router = useRouter();
   const { session, ready, selectAnswer, goTo, finish } = useSession();
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!ready) return;
@@ -17,8 +19,19 @@ export default function TestPage() {
     else if (session.finished) router.replace("/results");
   }, [ready, session, router]);
 
+  // Esc закрывает окно подтверждения
+  useEffect(() => {
+    if (!confirming) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirming(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirming]);
+
   if (!ready || !session || session.finished) return null;
 
+  const questions = getQuestions(session.lang);
   const total = questions.length;
   const index = Math.min(session.current, total - 1);
   const q = questions[index];
@@ -26,11 +39,18 @@ export default function TestPage() {
   const answeredCount = questions.filter((x) => session.answers[x.id] !== undefined).length;
   const remaining = total - answeredCount;
   const isLast = index === total - 1;
+  const sectionQuestions = questions.filter((x) => x.section === q.section);
+  const positionInSection = sectionQuestions.indexOf(q) + 1;
 
-  function handleFinish() {
-    if (remaining > 0) return;
+  function doFinish() {
     finish();
     router.push("/results");
+  }
+
+  // Завершить можно в любой момент: если есть вопросы без ответа — сначала спрашиваем подтверждение
+  function requestFinish() {
+    if (remaining > 0) setConfirming(true);
+    else doFinish();
   }
 
   return (
@@ -60,7 +80,16 @@ export default function TestPage() {
 
       {/* Вопрос: key заново запускает анимацию при смене вопроса */}
       <div key={q.id}>
-        <h1 className="animate-rise font-display text-2xl font-bold leading-snug sm:text-3xl">{q.text}</h1>
+        <p className="animate-rise text-xs font-semibold uppercase tracking-widest text-accent">
+          {sectionTitle(q.section)} · {positionInSection} / {sectionQuestions.length}
+          {q.part ? ` · ${q.part}` : ""}
+        </p>
+        {q.instruction && (
+          <p className="animate-rise mt-2 text-sm leading-relaxed text-muted">{q.instruction}</p>
+        )}
+        <h1 className="animate-rise mt-4 whitespace-pre-line font-display text-xl font-bold leading-snug sm:text-2xl">
+          <RichText text={q.text} />
+        </h1>
 
         <div role="radiogroup" aria-label="Варианты ответа" className="mt-8">
           {q.options.map((option, i) => {
@@ -86,7 +115,9 @@ export default function TestPage() {
                 >
                   {LETTERS[i]}
                 </span>
-                <span className="text-base sm:text-lg">{option}</span>
+                <span className="text-base sm:text-lg">
+                  <RichText text={option} />
+                </span>
               </button>
             );
           })}
@@ -107,9 +138,8 @@ export default function TestPage() {
         {isLast ? (
           <button
             type="button"
-            onClick={handleFinish}
-            disabled={remaining > 0}
-            className="bg-ink px-6 py-4 text-sm font-semibold uppercase tracking-widest text-paper transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-ink"
+            onClick={requestFinish}
+            className="bg-ink px-6 py-4 text-sm font-semibold uppercase tracking-widest text-paper transition hover:bg-accent"
           >
             Завершить тест
           </button>
@@ -124,51 +154,95 @@ export default function TestPage() {
         )}
       </div>
 
-      {isLast && remaining > 0 && (
-        <p className="mt-4 text-right text-sm text-red-700">
-          Остались вопросы без ответа: {remaining}. Вернитесь к ним по номерам ниже.
-        </p>
-      )}
-
-      {/* Навигатор по вопросам */}
-      <nav aria-label="Навигация по вопросам" className="mt-12 border-t border-line pt-6">
-        <ul className="flex flex-wrap gap-2">
-          {questions.map((x, i) => {
-            const answered = session.answers[x.id] !== undefined;
-            const current = i === index;
-            return (
-              <li key={x.id}>
-                <button
-                  type="button"
-                  onClick={() => goTo(i)}
-                  aria-label={`Вопрос ${i + 1}${answered ? ", есть ответ" : ", без ответа"}`}
-                  aria-current={current ? "step" : undefined}
-                  className={`size-10 border text-sm font-semibold transition ${
-                    current
-                      ? "border-accent ring-2 ring-accent/30"
-                      : "border-line hover:border-ink"
-                  } ${answered ? "bg-ink text-paper" : "text-muted"}`}
-                >
-                  {i + 1}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="mt-3 text-xs text-muted">Тёмные — с ответом, светлые — пока без ответа.</p>
+      {/* Навигатор по вопросам, сгруппирован по разделам */}
+      <nav aria-label="Навигация по вопросам" className="mt-12 space-y-6 border-t border-line pt-6">
+        {sections.map((sec) => {
+          const items = questions.map((x, i) => ({ x, i })).filter(({ x }) => x.section === sec.id);
+          if (items.length === 0) return null;
+          const done = items.filter(({ x }) => session.answers[x.id] !== undefined).length;
+          return (
+            <div key={sec.id}>
+              <p className="mb-2 flex justify-between text-xs font-semibold uppercase tracking-widest text-muted">
+                <span>{sec.title}</span>
+                <span>
+                  {done} / {items.length}
+                </span>
+              </p>
+              <ul className="flex flex-wrap gap-2">
+                {items.map(({ x, i }) => {
+                  const answered = session.answers[x.id] !== undefined;
+                  const current = i === index;
+                  return (
+                    <li key={x.id}>
+                      <button
+                        type="button"
+                        onClick={() => goTo(i)}
+                        aria-label={`Вопрос ${i + 1}${answered ? ", есть ответ" : ", без ответа"}`}
+                        aria-current={current ? "step" : undefined}
+                        className={`size-10 border text-sm font-semibold transition ${
+                          current ? "border-accent ring-2 ring-accent/30" : "border-line hover:border-ink"
+                        } ${answered ? "bg-ink text-paper" : "text-muted"}`}
+                      >
+                        {i + 1}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+        <p className="text-xs text-muted">Тёмные — с ответом, светлые — пока без ответа.</p>
       </nav>
 
-      {/* Завершение доступно и не с последнего вопроса */}
-      {!isLast && remaining === 0 && (
-        <div className="mt-8 border border-line p-5">
-          <p className="text-sm text-muted">Вы ответили на все вопросы.</p>
-          <button
-            type="button"
-            onClick={handleFinish}
-            className="mt-3 bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-widest text-white transition hover:bg-ink"
-          >
-            Завершить тест
-          </button>
+      {/* Завершить можно в любой момент */}
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-6">
+        <p className="text-sm text-muted">
+          Отвечено {answeredCount} из {total}
+        </p>
+        <button
+          type="button"
+          onClick={requestFinish}
+          className="border border-ink px-6 py-3 text-sm font-semibold uppercase tracking-widest transition hover:bg-ink hover:text-paper"
+        >
+          Завершить тест
+        </button>
+      </div>
+
+      {confirming && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-title"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center"
+          onClick={() => setConfirming(false)}
+        >
+          <div className="animate-rise w-full max-w-md bg-paper p-6 sm:p-8" onClick={(e) => e.stopPropagation()}>
+            <h2 id="confirm-title" className="font-display text-2xl font-bold">
+              Завершить тест?
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              Вы ответили на {answeredCount} из {total} вопросов. Без ответа: {remaining} — они будут засчитаны как
+              неверные. После завершения вернуться к тесту нельзя.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
+              <button
+                type="button"
+                onClick={doFinish}
+                className="bg-ink px-6 py-3 text-sm font-semibold uppercase tracking-widest text-paper transition hover:bg-accent"
+              >
+                Завершить
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConfirming(false)}
+                className="border border-ink px-6 py-3 text-sm font-semibold uppercase tracking-widest transition hover:bg-ink hover:text-paper"
+              >
+                Вернуться к тесту
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

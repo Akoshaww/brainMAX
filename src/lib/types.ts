@@ -1,19 +1,27 @@
+import type { Lang } from "@/config/languages";
+import type { SectionId } from "@/config/sections";
+
 export type Question = {
   id: number;
-  /** Подпись раздела над вопросом (необязательно) */
-  section?: string;
+  section: SectionId;
+  /** Подраздел внутри раздела, например «Дополнение предложений» (необязательно) */
+  part?: string;
+  /** Инструкция к заданию — показывается над вопросом (необязательно) */
+  instruction?: string;
   /** Текст вопроса. **слово** — выделяется жирным с подчёркиванием. \n — перенос строки */
   text: string;
-  /** Ровно 4 варианта ответа (тоже поддерживают **выделение**) */
-  options: [string, string, string, string];
-  /** Индекс правильного ответа (0–3) */
-  correctIndex: 0 | 1 | 2 | 3;
+  /** От 2 до 5 вариантов ответа (в ОРТ обычно 4, в части заданий по математике — 5). Тоже поддерживают **выделение** */
+  options: string[];
+  /** Индекс правильного ответа */
+  correctIndex: number;
 };
 
 export type Session = {
   name: string;
   /** Номер в формате E.164, например +996555123456 */
   phone: string;
+  /** Язык теста */
+  lang: Lang;
   /** questionId -> индекс выбранного варианта */
   answers: Record<number, number>;
   /** Индекс текущего вопроса */
@@ -23,9 +31,20 @@ export type Session = {
   finishedAt?: number;
 };
 
+export type SectionResult = {
+  id: SectionId;
+  title: string;
+  total: number;
+  correct: number;
+  answered: number;
+  percent: number;
+};
+
 export type TestResult = {
   total: number;
   correct: number;
   wrong: number;
+  answered: number;
   percent: number;
+  sections: SectionResult[];
 };

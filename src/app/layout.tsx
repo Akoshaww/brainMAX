@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/context/session-context";
 import { Header } from "@/components/header";
 import { siteConfig } from "@/config/site";
 
-const inter = Inter({ subsets: ["latin", "cyrillic"], variable: "--font-inter" });
-const playfair = Playfair_Display({ subsets: ["latin", "cyrillic"], variable: "--font-playfair" });
+// cyrillic-ext нужен для кыргызских букв Ү, Ө, Ң
+const inter = Inter({ subsets: ["latin", "cyrillic", "cyrillic-ext"], variable: "--font-inter" });
+const lora = Lora({ subsets: ["latin", "cyrillic", "cyrillic-ext"], variable: "--font-lora" });
 
 export const metadata: Metadata = {
   title: siteConfig.brand,
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={`${inter.variable} ${playfair.variable}`}>
+    <html lang="ru" className={`${inter.variable} ${lora.variable}`}>
       <body className="flex min-h-dvh flex-col">
         <SessionProvider>
           <Header />

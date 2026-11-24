@@ -8,6 +8,7 @@ export type CardData = {
   answered: number;
   percent: number;
   date: string;
+  sections: { title: string; correct: number; total: number; percent: number }[];
 };
 
 export function formatDate(ts: number): string {
@@ -26,11 +27,19 @@ export function buildMessage(d: CardData): string {
     `Ученик: ${d.name}`,
     `Телефон: ${d.phone}`,
     `Правильных ответов: ${d.correct} из ${d.total} (${d.percent}%)`,
+    ...d.sections.map((s) => `${s.title}: ${s.correct} из ${s.total} (${s.percent}%)`),
     `Дата: ${d.date}`,
   ].join("\n");
 }
 
-function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, size: number, weight: number, family: string) {
+function fit(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  size: number,
+  weight: number,
+  family: string,
+) {
   let s = size;
   ctx.font = `${weight} ${s}px ${family}`;
   while (ctx.measureText(text).width > maxWidth && s > 28) {
@@ -42,13 +51,17 @@ function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, size
   return out === text ? text : out.trimEnd() + "…";
 }
 
-/** Рисует карточку результата в PNG без сторонних библиотек. */
+/** Рисует карточку результата в PNG без сторонних библиотек. Высота зависит от числа разделов. */
 export async function renderResultCard(d: CardData): Promise<Blob> {
   if (typeof document !== "undefined" && document.fonts) await document.fonts.ready;
 
   const W = 1080;
-  const H = 1350;
   const pad = 88;
+  const rowH = 96;
+  const sectionsTop = 1300;
+  const sectionsEnd = sectionsTop + d.sections.length * rowH;
+  const H = sectionsEnd + 170;
+
   const sans = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
   const serif = "Georgia, 'Times New Roman', serif";
   const ink = "#141414";
@@ -98,7 +111,7 @@ export async function renderResultCard(d: CardData): Promise<Blob> {
   ctx.fillStyle = line;
   ctx.fillRect(pad, 490, W - pad * 2, 2);
 
-  // Процент
+  // Общий процент
   ctx.fillStyle = accent;
   ctx.font = `700 260px ${serif}`;
   ctx.fillText(`${d.percent}%`, pad - 8, 760);
@@ -107,7 +120,6 @@ export async function renderResultCard(d: CardData): Promise<Blob> {
   ctx.font = `600 44px ${sans}`;
   ctx.fillText(`${d.correct} из ${d.total} правильных ответов`, pad, 840);
 
-  // Полоса
   const barW = W - pad * 2;
   ctx.fillStyle = line;
   ctx.fillRect(pad, 890, barW, 16);
@@ -134,12 +146,36 @@ export async function renderResultCard(d: CardData): Promise<Blob> {
     ctx.fillText(value, x, 1100);
   });
 
-  // Подвал
+  // По разделам
   ctx.fillStyle = line;
   ctx.fillRect(pad, 1180, W - pad * 2, 2);
   ctx.fillStyle = muted;
+  ctx.font = `600 24px ${sans}`;
+  ctx.fillText("ПО РАЗДЕЛАМ", pad, 1240);
+
+  d.sections.forEach((s, i) => {
+    const y = sectionsTop + i * rowH;
+    ctx.textAlign = "left";
+    ctx.fillStyle = ink;
+    ctx.font = `600 32px ${sans}`;
+    ctx.fillText(s.title, pad, y);
+    ctx.textAlign = "right";
+    ctx.fillStyle = muted;
+    ctx.font = `500 30px ${sans}`;
+    ctx.fillText(`${s.correct} из ${s.total}  ·  ${s.percent}%`, W - pad, y);
+    ctx.textAlign = "left";
+    ctx.fillStyle = line;
+    ctx.fillRect(pad, y + 22, barW, 10);
+    ctx.fillStyle = accent;
+    ctx.fillRect(pad, y + 22, (barW * s.percent) / 100, 10);
+  });
+
+  // Подвал
+  ctx.fillStyle = line;
+  ctx.fillRect(pad, sectionsEnd + 20, W - pad * 2, 2);
+  ctx.fillStyle = muted;
   ctx.font = `500 28px ${sans}`;
-  ctx.fillText(`Дата прохождения: ${d.date}`, pad, 1250);
+  ctx.fillText(`Дата прохождения: ${d.date}`, pad, sectionsEnd + 90);
 
   return new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Не удалось создать PNG"))), "image/png"),

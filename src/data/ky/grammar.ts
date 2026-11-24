@@ -1,16 +1,17 @@
 import type { Question } from "@/lib/types";
 
-// ОРТ — Кыргыз тили, Вариант 2 (30 вопросов).
+// ОРТ — Кыргыз тили, Вариант 2: раздел «Грамматика» (30 вопросов: 10 сүйлөм толуктоо + 20 грамматика).
 // Источник: ORT_Kyrgyz_tili_Variant2.pdf. **слово** — слово, выделенное в оригинале жирным (асты сызылган сөз).
-// Позже этот массив заменится запросом к API/БД — остальной код работает только через этот модуль.
+// id здесь локальные: итоговые сквозные id назначаются в data/questions.ts.
 
 const P1 = "I бөлүк · Сүйлөмдөрдү толуктоо";
 const P2 = "II бөлүк · Грамматика";
 
-export const questions: Question[] = [
+const raw: Question[] = [
   {
     id: 1,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Китеп окуу адамдын _____ байытып, ой-жүгүртүүсүн _____, сөз байлыгын _____.",
     options: [
       "көңүлүн / өстүрөт / көбөйтөт",
@@ -22,7 +23,8 @@ export const questions: Question[] = [
   },
   {
     id: 2,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Жаз келип, тоолордун кары _____, дарыялар _____, талаа-түздөр жашыл килемге _____.",
     options: [
       "катып / ташып / оронот",
@@ -34,7 +36,8 @@ export const questions: Question[] = [
   },
   {
     id: 3,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Таңдан бери _____ жаап жатат, ошондуктан сейилдөөгө _____.",
     options: [
       "жамгыр / чыгууга болбойт",
@@ -46,7 +49,8 @@ export const questions: Question[] = [
   },
   {
     id: 4,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Окуучу сабакка даярданып жатканда, адегенде тема менен _____, андан кийин суроолорго _____, акырында өзүн _____.",
     options: [
       "таанышып / жооп берип / жашырып",
@@ -58,7 +62,8 @@ export const questions: Question[] = [
   },
   {
     id: 5,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Токойлор кыйылса, жаныбарлар _____, аба _____, жер эрозияга _____.",
     options: [
       "баш калкалай албай калат / тазарат / дуушар болот",
@@ -70,7 +75,8 @@ export const questions: Question[] = [
   },
   {
     id: 6,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "«Манас» эпосу кыргыз элинин _____ болуп эсептелет, ал муундан муунга _____, бүгүнкү күнгө чейин _____.",
     options: [
       "улуу мурасы / жазылып / жоголуп кетти",
@@ -82,7 +88,8 @@ export const questions: Question[] = [
   },
   {
     id: 7,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Сынчыл ой жүгүртүүгө ээ адам маалыматты _____ кабыл албай, анын _____ текшерип, андан кийин гана өз _____ билдирет.",
     options: [
       "дароо / тууралыгын / оюн",
@@ -94,7 +101,8 @@ export const questions: Question[] = [
   },
   {
     id: 8,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Кышында аба ырайы _____, жолдор _____, ошондуктан айдоочулар _____ жүрүшү зарыл.",
     options: [
       "катаал болуп / тайгак болуп / шашып",
@@ -106,7 +114,8 @@ export const questions: Question[] = [
   },
   {
     id: 9,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Максатка жетүү үчүн тынбай _____, көп _____ жана өзүнө _____ зарыл.",
     options: [
       "эмгектенбей / окуп / ишенүү",
@@ -118,7 +127,8 @@ export const questions: Question[] = [
   },
   {
     id: 10,
-    section: P1,
+    section: "grammar",
+    part: P1,
     text: "Эне тили — элдин жаны. Анткени ал аркылуу элдин _____, каада-салты, _____ муундан муунга _____.",
     options: [
       "тарыхы / маданияты / өтпөй калат",
@@ -130,7 +140,8 @@ export const questions: Question[] = [
   },
   {
     id: 11,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы катардагы сөздөрдүн бардыгы туура жазылган?",
     options: [
       "ата эне, бала-чака, жаш-кары",
@@ -142,14 +153,16 @@ export const questions: Question[] = [
   },
   {
     id: 12,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Туура жазылган вариантты тапкыла.",
     options: ["кыйинчылык", "кыйынчылык", "кыйынчлык", "кыйынчилык"],
     correctIndex: 1,
   },
   {
     id: 13,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө асты сызылган сөз кыймыл-аракетти билдирет?",
     options: [
       "**Таңкы** аба абдан таза экен.",
@@ -161,7 +174,8 @@ export const questions: Question[] = [
   },
   {
     id: 14,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө асты сызылган сөз сын атооч болуп келген?",
     options: [
       "Мен **бүгүн** китепканага бардым.",
@@ -173,7 +187,8 @@ export const questions: Question[] = [
   },
   {
     id: 15,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө тыныш белгилери туура коюлган?",
     options: [
       "Айгүл, Нурлан жана Эрмек, мектепке барышты.",
@@ -185,7 +200,8 @@ export const questions: Question[] = [
   },
   {
     id: 16,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө тыныш белгилери туура коюлган?",
     options: [
       "«Сабагыңды даярдап койдуңбу?» — деп сурады апам.",
@@ -197,7 +213,8 @@ export const questions: Question[] = [
   },
   {
     id: 17,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө асты сызылган сөз аныктооч болуп келген?",
     options: [
       "**Күз** келип, жалбырактар саргайды.",
@@ -209,7 +226,8 @@ export const questions: Question[] = [
   },
   {
     id: 18,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө тыныш белгиси туура коюлган?",
     options: [
       "Жамгыр жааса да биз, сейилдөөгө чыктык.",
@@ -221,14 +239,16 @@ export const questions: Question[] = [
   },
   {
     id: 19,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Мен досум… үй… бардым.\nЖогорудагы бош чекиттердин ордуна кайсы мүчөлөрдү катары менен уласа, туура сүйлөм түзүлөт?",
     options: ["–дун, –үнө", "–дын, –ына", "–ду, –үнө", "–дун, –ү"],
     correctIndex: 0,
   },
   {
     id: 20,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы катардагы сөздөрдүн бардыгы сөз жасоочу мүчө менен жасалган?",
     options: [
       "балыкчы, тоо, жазуучу",
@@ -240,21 +260,24 @@ export const questions: Question[] = [
   },
   {
     id: 21,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы вариантта аныктооч менен аныкталгыч түзгөн сөз айкашы берилген?",
     options: ["китеп окуу", "тоого чыгуу", "мектепте окуу", "жашыл токой"],
     correctIndex: 3,
   },
   {
     id: 22,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы вариантта сүйлөм бөлүктөрүн ырааттуулук боюнча жайгаштырсак, сүйлөмдү туура түзгөн болобуз?\n\nI. жакшы көрүп чоңойгон\nII. Алымкул бала кезинен тартып\nIII. китеп окууну",
     options: ["I, II, III", "II, III, I", "III, I, II", "II, I, III"],
     correctIndex: 1,
   },
   {
     id: 23,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы катардагы сөздөрдө жатыш жөндөмөсүнүн мүчөсү туура жалганган?",
     options: [
       "мектепде, айылда",
@@ -268,7 +291,8 @@ export const questions: Question[] = [
   },
   {
     id: 24,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы катардагы сөздөрдүн көптүк мүчөсү туура жалганган?",
     options: [
       "китептар, кыздер, балдар",
@@ -280,7 +304,8 @@ export const questions: Question[] = [
   },
   {
     id: 25,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө асты сызылган сөз өтмө маанисинде колдонулган?",
     options: [
       "Бул кутунун салмагы **оор**.",
@@ -292,14 +317,16 @@ export const questions: Question[] = [
   },
   {
     id: 26,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы катардагы сөздөр бири-бирине карама-каршы маанидеги (антоним) сөздөр?",
     options: ["жылуу — суук", "кооз — сулуу", "чоң — эбегейсиз", "окуу — үйрөнүү"],
     correctIndex: 0,
   },
   {
     id: 27,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө этиштин өткөн чагы колдонулган?",
     options: [
       "Мен эртең сага барам.",
@@ -311,7 +338,8 @@ export const questions: Question[] = [
   },
   {
     id: 28,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдүн биринчи бөлүгү экинчи бөлүгүнүн себебин билдирет?",
     options: [
       "Жамгыр жаагандыктан, биз үйдөн чыккан жокпуз.",
@@ -323,7 +351,8 @@ export const questions: Question[] = [
   },
   {
     id: 29,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы сүйлөмдө асты сызылган сөз барыш жөндөмөсүндө турат?",
     options: [
       "Бала **китепти** окуду.",
@@ -335,7 +364,8 @@ export const questions: Question[] = [
   },
   {
     id: 30,
-    section: P2,
+    section: "grammar",
+    part: P2,
     text: "Кайсы катардагы сөздөрдүн бардыгы туура жазылган?",
     options: [
       "өзгөчө, ыңгайлу, жоопкерчилик",
@@ -346,3 +376,10 @@ export const questions: Question[] = [
     correctIndex: 3,
   },
 ];
+
+const COMPLETION_INSTRUCTION =
+  "Нускама: бош калтырылган жерлерге мааниси жагынан эң туура келген сөздөр тобун тандаңыз.";
+
+export const grammar: Question[] = raw.map((q) =>
+  q.part === P1 ? { ...q, instruction: COMPLETION_INSTRUCTION } : q,
+);

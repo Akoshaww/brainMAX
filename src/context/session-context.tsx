@@ -8,26 +8,34 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { questions } from "@/data/questions";
+import type { Lang } from "@/config/languages";
+import { getQuestions } from "@/data/questions";
 import type { Session } from "@/lib/types";
 
-const STORAGE_KEY = "test-session-v1";
+// v2: добавлены язык и разделы, старые сохранения несовместимы.
+// localStorage — прогресс переживает закрытие вкладки и браузера.
+const STORAGE_KEY = "test-session-v2";
 
-/* ---------- Мини-хранилище поверх sessionStorage ---------- */
+/* ---------- Мини-хранилище поверх localStorage ---------- */
 
 const listeners = new Set<() => void>();
-let memoryFallback: string | null = null; // если sessionStorage недоступен
+let memoryFallback: string | null = null; // если localStorage недоступен
 
 function subscribe(cb: () => void) {
   listeners.add(cb);
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY || e.key === null) cb(); // изменения из другой вкладки
+  };
+  window.addEventListener("storage", onStorage);
   return () => {
     listeners.delete(cb);
+    window.removeEventListener("storage", onStorage);
   };
 }
 
 function readRaw(): string | null {
   try {
-    return sessionStorage.getItem(STORAGE_KEY);
+    return localStorage.getItem(STORAGE_KEY);
   } catch {
     return memoryFallback;
   }
@@ -36,8 +44,8 @@ function readRaw(): string | null {
 function writeRaw(value: string | null) {
   memoryFallback = value;
   try {
-    if (value === null) sessionStorage.removeItem(STORAGE_KEY);
-    else sessionStorage.setItem(STORAGE_KEY, value);
+    if (value === null) localStorage.removeItem(STORAGE_KEY);
+    else localStorage.setItem(STORAGE_KEY, value);
   } catch {
     /* работаем только в памяти */
   }
@@ -66,11 +74,11 @@ type SessionContextValue = {
   session: Session | null;
   /** false, пока состояние не восстановлено на клиенте */
   ready: boolean;
-  start: (name: string, phone: string) => void;
+  start: (name: string, phone: string, lang: Lang) => void;
   selectAnswer: (questionId: number, optionIndex: number) => void;
   goTo: (index: number) => void;
   finish: () => void;
-  /** Начать заново с теми же именем и номером */
+  /** Начать заново с теми же именем, номером и языком */
   retake: () => void;
   /** Полный выход */
   reset: () => void;
@@ -78,8 +86,8 @@ type SessionContextValue = {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
-function createSession(name: string, phone: string): Session {
-  return { name, phone, answers: {}, current: 0, finished: false, startedAt: Date.now() };
+function createSession(name: string, phone: string, lang: Lang): Session {
+  return { name, phone, lang, answers: {}, current: 0, finished: false, startedAt: Date.now() };
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -88,7 +96,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const session = useMemo(() => parse(raw), [raw]);
 
   const start = useCallback(
-    (name: string, phone: string) => writeRaw(JSON.stringify(createSession(name, phone))),
+    (name: string, phone: string, lang: Lang) =>
+      writeRaw(JSON.stringify(createSession(name, phone, lang))),
     [],
   );
 
@@ -99,15 +108,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const goTo = useCallback((index: number) => {
-    const clamped = Math.max(0, Math.min(questions.length - 1, index));
-    update((s) => (s.finished ? s : { ...s, current: clamped }));
+    update((s) => {
+      if (s.finished) return s;
+      const last = getQuestions(s.lang).length - 1;
+      return { ...s, current: Math.max(0, Math.min(last, index)) };
+    });
   }, []);
 
   const finish = useCallback(() => {
     update((s) => ({ ...s, finished: true, finishedAt: Date.now() }));
   }, []);
 
-  const retake = useCallback(() => update((s) => createSession(s.name, s.phone)), []);
+  const retake = useCallback(() => update((s) => createSession(s.name, s.phone, s.lang)), []);
 
   const reset = useCallback(() => writeRaw(null), []);
 

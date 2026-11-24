@@ -65,12 +65,18 @@ export function SendResult({ data }: { data: CardData }) {
     <div className="animate-rise border border-line p-5 sm:p-8">
       <p className="text-xs font-semibold uppercase tracking-widest text-muted">Карточка результата</p>
 
-      <div className="mt-5 flex aspect-[1080/1350] w-full max-w-sm items-center justify-center bg-line/40">
+      <div className="mt-5 w-full max-w-sm bg-line/40">
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={previewUrl} alt={`Карточка результата: ${data.name}, ${data.percent}%`} className="size-full" />
+          <img
+            src={previewUrl}
+            alt={`Карточка результата: ${data.name}, ${data.percent}%`}
+            className="block h-auto w-full"
+          />
         ) : (
-          <span className="text-sm text-muted">{error ?? "Создаём карточку…"}</span>
+          <span className="flex min-h-64 items-center justify-center p-4 text-sm text-muted">
+            {error ?? "Создаём карточку…"}
+          </span>
         )}
       </div>
 

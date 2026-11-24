@@ -9,6 +9,12 @@ export function Header() {
   const router = useRouter();
   const { session, reset } = useSession();
 
+  function handleExit() {
+    if (session && !session.finished && !window.confirm("Выйти? Прогресс теста будет потерян.")) return;
+    reset();
+    router.push("/");
+  }
+
   return (
     <header className="border-b border-line">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5">
@@ -21,10 +27,7 @@ export function Header() {
             <span className="hidden max-w-48 truncate text-muted sm:inline">{session.name}</span>
             <button
               type="button"
-              onClick={() => {
-                reset();
-                router.push("/");
-              }}
+              onClick={handleExit}
               className="underline-offset-4 transition hover:text-accent hover:underline"
             >
               Выйти
